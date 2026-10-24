@@ -97,12 +97,8 @@ export const PROBES = {
   },
 };
 
-// 聞くだけの製品 (手元を調べない)
-const ASK = {
-  java: "開発用の Java (JDK) を入れていますか? 入れている人は、AI に「Java の版を確認して」と頼み、入れた会社 (配布元) の 2026-10-21 以降の更新があれば入れてください (入れ方は配布元ごとに違い、版だけでは足りない場合があります: openjdk.org/emudhra)。ここでは調べていません。",
-  wordpress: "ブログ (WordPress) を持っていますか? 持っている人は、管理画面の「ダッシュボード → 更新」を開いて、更新があれば入れてください。ここでは調べていません。",
-  "mcp-sdk": "自分で MCP のプログラムを作っていますか? 作っている人は、package.json の @modelcontextprotocol/sdk の版を、ページの項目と見比べてください。ここでは調べていません。",
-};
+// 手元を調べない製品 (報告の「調べていない物」の 1 行に名前だけ出す・聞き返さない。本人 10/25 0:37「一つ質問といいながら一つじゃない」)
+const ASK = new Set(["java", "wordpress", "mcp-sdk"]);
 
 // 「やること」と「手で確かめる 1 手」は script が持つ (データからは取らない)
 const STEPS = {
@@ -152,8 +148,6 @@ const UNKNOWN_REASON = {
   macos: "この一覧に、この Mac の系統 (macOS 15 と 26 の外) と比べられる直った版が載っていないので、判定できません。システム設定 → 一般 → ソフトウェアアップデートで、出ている更新を確かめてください",
 };
 const GROUPS = ["everyone", "apps", "ai-tools", "python-node", "blog", "developers"];
-// 範囲の文の例に出す短い名前 (この順で、実際に版を調べた物から 3 つまで)
-const SHORT = [["chrome", "Chrome"], ["windows", "Windows"], ["macos", "macOS"], ["node", "Node"], ["claude-code", "Claude Code"], ["python", "Python"], ["pip", "pip"], ["uv", "uv"], ["certifi", "certifi"], ["ollama", "Ollama"], ["edge", "Edge"], ["codex", "Codex"], ["npm", "npm"], ["firefox", "Firefox"], ["tailscale", "Tailscale"], ["zoom", "Zoom"], ["claude-desktop", "Claude アプリ"], ["bun", "Bun"], ["vscode", "VS Code"]];
 
 // ───── 版 ─────
 export function parseVersion(s) {
@@ -411,7 +405,7 @@ export async function run(opts = {}) {
     const items = await Promise.all(data.items.map(async (it) => {
       const base = { id: it.id, product: it.product, display_name: it.display_name, what_can_happen: it.what_can_happen, source_url: it.source_url, learning: it.learning, local_version: null, fixed_version: it.fixed_versions[0], how_to_check_manually: MANUAL[it.product] ?? null, checked: false };
       if (!it.platforms.includes(platKey)) return { ...base, status: "not_installed" };
-      if (Object.hasOwn(ASK, it.product)) return { ...base, status: "ask" };
+      if (ASK.has(it.product)) return { ...base, status: "ask" };
       if (!Object.hasOwn(table, it.product)) return { ...base, status: "unknown" };
       const r = await probe(it.product); // ここから先 = この PC で版を調べた物 (checked)
       if (r.state === "not_installed") return { ...base, checked: true, status: "not_installed" };
@@ -452,12 +446,6 @@ export function render(r) {
   // 「大丈夫」は使わない (PC 全体が安全と読めるため)。言うのは「見つかった物が直った版以上だった」ことだけ
   const rest = unk.length === 0 && ask.length === 0 && ok.length > 0 ? (now.length === 0 ? "見つかった物は、全部更新済みでした。" : "ほかに見つかった物は、更新済みでした。") : "";
   L.push(`今すぐやることは ${now.length} 件。調べられなかった物は ${unk.length} 件。` + rest);
-  // 数は「この PC で実際に版を見に行った数」(聞くだけの物・別の OS の物は入らない)。ページの「一覧の N 個」と同じ数え方 (製品の数)
-  const products = (list) => [...new Set(list.map((i) => i.product))];
-  const looked = products(r.items.filter((i) => i.checked));
-  const eg = SHORT.filter(([p]) => looked.includes(p)).slice(0, 3).map(([, n]) => n);
-  const egText = eg.length ? ` (${eg.join("・")}${looked.length > eg.length ? " など" : ""})` : "";
-  L.push(`パソコンの中を全部調べる物ではありません。ウイルスも探しません。この PC で版を見に行ったのは、ページの一覧の ${products(r.items).length} 個のうち ${looked.length} 個のソフト${egText ? egText + " " : ""}だけです。載っていない弱点は分かりません。`);
   L.push("");
   L.push(box(`今すぐやること (${now.length})`, now.flatMap((i, n) => [
     ` ${n + 1}. ${safe(i.display_name)} — 今 ${i.local_version} / 直った版 ${i.fixed_version} 以上`,
@@ -471,8 +459,9 @@ export function render(r) {
   L.push(box(`調べられなかった物 (${unk.length})`, unk.flatMap((i) => [
     `   ${safe(i.display_name)} → ` + ((i.local_version && UNKNOWN_REASON[i.product]) || `${i.how_to_check_manually ?? "公式の画面で版を確かめ"}、直った版 ${i.fixed_version} 以上か見比べてください`),
   ])));
+  const askNames = [...new Set(ask.map((i) => safe(i.display_name)))];
+  if (askNames.length) L.push(`■ 調べていない物: ${askNames.join("・")} (使っている人は、ページで版を見比べてください)`);
   L.push("─");
-  for (const i of ask) L.push(`ひとつ質問: ${ASK[i.product]}`);
   L.push("更新したら、もう一度「ソフト更新チェックして」で確かめられます。");
   L.push("このチェックのプログラムが外と通信するのは、データと署名の 2 つを取りに行く時だけで、結果を送る通信はしません。ただし、結果の文 (手元のソフトの版を含みます) は、いつもの AI との会話と同じく、あなたが使っている AI の会社のサーバーに送られます。");
   return L.join("\n");
