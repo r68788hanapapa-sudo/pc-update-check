@@ -1,0 +1,17 @@
+{
+  "name": "hanapapa-sec-kit",
+  "plugins": [
+    {
+      "name": "pc-update-check",
+      "source": {
+        "source": "local",
+        "path": "./plugins/pc-update-check"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Security"
+    }
+  ]
+}
