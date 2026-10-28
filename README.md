@@ -9,7 +9,7 @@ PC の Chrome・Windows など 17 のソフトについて、「今すぐ更新�
 1. Claude Code に次の 1 行を貼って Enter
 
    ```
-   /plugin marketplace add r68788hanapapa-sudo/pc-update-check#v1.0.5
+   /plugin marketplace add r68788hanapapa-sudo/pc-update-check#v1.0.6
    ```
 
 2. 続けて次の 1 行を貼って Enter (出た画面は、自分用に入れる「user」と書いてある一番上を選んで Enter)
@@ -27,7 +27,7 @@ PC の Chrome・Windows など 17 のソフトについて、「今すぐ更新�
 1. 次の 1 行を貼って Enter
 
    ```
-   codex plugin marketplace add r68788hanapapa-sudo/pc-update-check --ref 7de59f738ac652a04d214ea59f23d9f45da36953
+   codex plugin marketplace add r68788hanapapa-sudo/pc-update-check --ref c66ce559a3e86c900fa2a98b7f598e528cd98eb2
    ```
 
 2. 続けて次の 1 行を貼って Enter
@@ -59,7 +59,7 @@ https://hanapapa-pc-update-check.pages.dev/
 ## 入れ方のしくみ
 
 - Claude Code・Codex が公式に持っている「プラグイン」の入れ方を使います。この置き場が marketplace (`hanapapa-sec-kit`) で、中のプラグインが `pc-update-check` です。入れる時は人が貼るだけで、AI は何も打ちません。
-- 版の固定: Claude Code はタグ (`#v1.0.5`)、Codex は commit (40 字) で固定して入れます。この置き場の main と `v*` のタグは、消したり書き換えたりできない設定です。
+- 版の固定: Claude Code はタグ (`#v1.0.6`)、Codex は commit (40 字) で固定して入れます。この置き場の main と `v*` のタグは、消したり書き換えたりできない設定です。
 - 更新: Claude Code は、第三者の置き場の自動更新が初めからオフです (公式の説明)。新しい版は、はなパパの投稿でお知らせします。
 
 ## チェックの時に動く物
@@ -74,10 +74,10 @@ https://hanapapa-pc-update-check.pages.dev/
 
 ## 手で入れる (zip)
 
-プラグインの入れ方がうまくいかない人向けに、ページで zip も配っています (`pc-update-check-1.0.5.zip`・sha256 `494087b32edcc2adeebc5d4f91284b0051e2200ffd2233703d100fd8cd6f13f9`)。入れる前に、署名を確かめてください。
+プラグインの入れ方がうまくいかない人向けに、ページで zip も配っています (`pc-update-check-1.0.6.zip`・sha256 `50a4f01deb861816709e8abaf008f2611e3cb16564e60e141522578997a1caf2`)。入れる前に、署名を確かめてください。
 
-- Mac: `/usr/bin/ssh-keygen -Y verify -f allowed_signers -I sec-kit@hanapapa -n sec-kit -s pc-update-check-1.0.5.zip.sig < pc-update-check-1.0.5.zip`
-- Windows (PowerShell): `C:\Windows\System32\cmd.exe /d /c "C:\Windows\System32\OpenSSH\ssh-keygen.exe -Y verify -f allowed_signers -I sec-kit@hanapapa -n sec-kit -s pc-update-check-1.0.5.zip.sig < pc-update-check-1.0.5.zip"`
+- Mac: `/usr/bin/ssh-keygen -Y verify -f allowed_signers -I sec-kit@hanapapa -n sec-kit -s pc-update-check-1.0.6.zip.sig < pc-update-check-1.0.6.zip`
+- Windows (PowerShell): `C:\Windows\System32\cmd.exe /d /c "C:\Windows\System32\OpenSSH\ssh-keygen.exe -Y verify -f allowed_signers -I sec-kit@hanapapa -n sec-kit -s pc-update-check-1.0.6.zip.sig < pc-update-check-1.0.6.zip"`
 
 「Good "sec-kit" signature」と出なければ、入れないでください。展開してできた `pc-update-check` のフォルダを `~/.claude/skills/` (Claude Code) か `~/.agents/skills/` (Codex) に置きます。
 
