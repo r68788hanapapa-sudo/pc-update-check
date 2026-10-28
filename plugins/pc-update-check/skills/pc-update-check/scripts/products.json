@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "_note": "older_lines_unknown = 載っている系統より古い版を「今すぐ」にせず「比べられない」にする (Apple が 15 と 26 の直った版しか書いていない macOS 用)。line_depth = 系統を決める先頭の区切りの数 (windows 3 = 10.0.26200 / node・macos・firefox・java 1 = 24 / それ以外 0 = 系統なし・fixed_versions の 1 つ目だけ)。source_hosts = source_url のホスト名 (完全一致) の許可リスト。席 B の check.mjs と同じ物を読む。source_prefixes = host が github.com の時だけ、source_url の前方一致を必須にする製品ごとの公式のリポ (誰でもリポを作れるため)。edge / python / npm / wordpress のホストは席 A の仮置き (窓口が確かめる)。macos / tailscale / firefox / zoom / bun / java のホストは 10/24 に一次の発表を開いて確かめた。claude-desktop の勧告は claude-code のリポに載っている (10/24 確認)。",
+  "_note": "older_lines_unknown = 載っている系統より古い版を「今すぐ」にせず「比べられない」にする (Apple が 15 と 26 の直った版しか書いていない macOS 用)。line_depth = 系統を決める先頭の区切りの数 (windows 3 = 10.0.26200 / node・macos・firefox・java 1 = 24 / それ以外 0 = 系統なし・fixed_versions の 1 つ目だけ)。source_hosts = source_url のホスト名 (完全一致) の許可リスト。席 B の check.mjs と同じ物を読む。source_prefixes = host が github.com の時だけ、source_url の前方一致を必須にする製品ごとの公式のリポ (誰でもリポを作れるため)。edge / python / npm / wordpress のホストは席 A の仮置き (窓口が確かめる)。macos / tailscale / firefox / zoom / bun / java のホストは 10/24 に一次の発表を開いて確かめた。claude-desktop の勧告は claude-code のリポに載っている (10/24 確認)。dotnet / powershell / brotli は 10/28 に足した (1.0.6・一次の発表を開いて確かめた: dotnet/announcements・PowerShell/Announcements・google/brotli)。dotnet = Microsoft.NETCore.App の系統 (8 / 9 / 10 の先頭 1 区切り)・powershell = 7.4 / 7.5 / 7.6 の先頭 2 区切り。どちらも older_lines_unknown は付けない (サポートが終わった古い系統 = 直った版が出ない = 今すぐ)。1.0.5 以前のスキルはこの 3 つを知らないので、build_data.py が古い置き場 (advisories.json) からはこの 3 つの行を外す (LEGACY_PRODUCTS)。",
   "products": {
     "windows":     {"line_depth": 3, "source_hosts": ["msrc.microsoft.com", "nvd.nist.gov"]},
     "macos":       {"line_depth": 1, "older_lines_unknown": true, "source_hosts": ["support.apple.com", "nvd.nist.gov"]},
@@ -23,6 +23,9 @@
     "npm":         {"line_depth": 0, "source_hosts": ["github.com", "docs.npmjs.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/npm/cli/"]},
     "java":        {"line_depth": 1, "source_hosts": ["openjdk.org", "nvd.nist.gov"]},
     "wordpress":   {"line_depth": 0, "source_hosts": ["wordpress.org", "nvd.nist.gov"]},
-    "mcp-sdk":     {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/modelcontextprotocol/typescript-sdk/"]}
+    "mcp-sdk":     {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/modelcontextprotocol/typescript-sdk/"]},
+    "dotnet":      {"line_depth": 1, "source_hosts": ["github.com", "msrc.microsoft.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/dotnet/announcements/", "https://github.com/dotnet/core/"]},
+    "powershell":  {"line_depth": 2, "source_hosts": ["github.com", "msrc.microsoft.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/PowerShell/Announcements/", "https://github.com/PowerShell/PowerShell/"]},
+    "brotli":      {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/google/brotli/"]}
   }
 }

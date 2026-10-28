@@ -32,7 +32,7 @@ Node 18 以上と `ssh-keygen` (OpenSSH 8.0 以上) が要ります。`ssh -V` �
 
 - 外との通信は**データと署名の 2 つを取りに行く GET だけ**です (置き場の Cloudflare には通常のアクセスの記録が残ることがあります)。結果を script が保存・送信することはありません。「更新して」で更新を実行する時は、その更新の通信が出ます。
 - 版を聞くために、各ソフトの `--version` などを動かします。その時に各ソフトが自分の設定を読むことはあります (script が受け取るのは版の数字だけ)。`ollama --version` は、この PC で動いている Ollama に版を聞くことがあります (`OLLAMA_HOST` は外して動かすので、別の機械にはつながりません)。
-- 手元で読むのは各製品の版だけ (`--version` 等の固定の命令)。設定・鍵・`.env`・Cookie・ブラウザのプロフィールは読みません。Windows のレジストリは `CurrentBuild` / `UBR` の 2 値だけ。 Tailscale・Firefox・Zoom・Chrome・Edge は、決まった場所の exe の「ファイルの版」を読むだけで、起動しません (Mac は決まった場所の `Info.plist` の版)。Windows の Claude のアプリは、ストアの一覧 (`Get-AppxPackage -Name Claude`・出版元 ID が Anthropic の物だけ) の版の数字だけ。Java と WordPress と MCP は、手元を調べずに聞くだけです。
+- 手元で読むのは各製品の版だけ (`--version` 等の固定の命令)。設定・鍵・`.env`・Cookie・ブラウザのプロフィールは読みません。Windows のレジストリは `CurrentBuild` / `UBR` の 2 値だけ。 Tailscale・Firefox・Zoom・Chrome・Edge は、決まった場所の exe の「ファイルの版」を読むだけで、起動しません (Mac は決まった場所の `Info.plist` の版)。Windows の Claude のアプリは、ストアの一覧 (`Get-AppxPackage -Name Claude`・出版元 ID が Anthropic の物だけ) の版の数字だけ。.NET は `dotnet --list-runtimes` の `Microsoft.NETCore.App <版>` の行 (複数あれば全部を比べ、一番悪い結果を出す・プレビュー版は数えない)、PowerShell 7 は `pwsh --version` (Windows に最初からある PowerShell 5.1 は別物で見ない)、Python の brotli は `python -I -m pip show brotli pip` (pip の段も一緒に出して、「brotli が入っていない」と「pip が無くて調べられない」を分ける・1.0.6 から)。`dotnet` と `pwsh` には、利用状況の送信と更新の確かめをしない設定 (`DOTNET_CLI_TELEMETRY_OPTOUT`・`POWERSHELL_TELEMETRY_OPTOUT`・`POWERSHELL_UPDATECHECK=Off`) を足して動かします。Java と WordPress と MCP は、手元を調べずに聞くだけです。
 - 「更新して」と言うと、`references/update_methods.md` の表にある公式の手段を提案し、**あなたが OK と言った物だけを 1 つずつ AI が実行します** (Chrome・Windows・Node などは手順を示すだけ)。更新するかは自分で決めてください。うまくいかない時は各メーカーの公式のサポートへ。
 - **結果の文はあなたが使っている AI (Claude / Codex) との会話に入ります。** script はどこかへ送ることはしませんが、結果の文は AI の会社のサーバーに送られます。
 - `allowed-tools` は `Read` と、チェックの命令 **1 つの形だけ** (`Bash(env -u NODE_OPTIONS -u NODE_PATH node "${CLAUDE_SKILL_DIR}/scripts/check.mjs")`・`*` 無しのまったく同じ形) です。10/24 朝に広い許可 (`Bash(node *)`・`Bash(env -u *)`・`Bash(ssh-keygen *)`) を外し、10/24 14 時にこの 1 つだけを足しました (Claude Code の公式の説明: `${CLAUDE_SKILL_DIR}` は allowed-tools の Bash の規則と本文で同じ所に置き換わる・`*` の無い規則は 1 つの命令だけに当たる・`&&` などでつないだ命令は 1 つずつ当てる)。Claude Code では、この形のチェックは聞かれずに動きます (この 1 回の手番だけ)。ほかの命令は、ふつうどおり聞かれます。`allowed-tools` は守りの境界ではありません (AI への指示と、その手番の許可です)。守りの本体は script が命令を固定していること・データを署名と型で検査することです。Codex は `allowed-tools` を無視します (Codex の中で打つと、通信が止まる砂場の外で実行してよいかを聞かれることがあります。だから Codex の人のチェックは自分の端末で動かします)。残る弱さ: `env`・`node` は PATH から探すので、PATH を書き換えられた PC では別の物が動きうる (前からある・10/24 Codex medium)
@@ -40,6 +40,7 @@ Node 18 以上と `ssh-keygen` (OpenSSH 8.0 以上) が要ります。`ssh -V` �
 ## 確認の範囲 (正直に)
 
 - Windows 11 + Claude Code 2.1 + Codex CLI 0.159 で動作を見ました。
+- .NET・PowerShell 7・brotli の版の読み方 (1.0.6) は Windows 11 で確かめました (.NET 6.0.16 と 8.0.21 の 2 つを読めた・PowerShell 7 が入っていない PC で「見つからなかった」・pip のある Python で brotli 1.2.1 を読めた・PATH の先頭の `python` に pip が無い時は certifi と同じく「調べられなかった」)。PowerShell 7 が入っている PC では試していません (`pwsh --version` の出力の形は公式の説明に基づく)。
 - **Mac は試していません** (実機なし)。命令の出典: `sw_vers -productVersion` は Apple の man ページ (https://leancrew.com/all-this/man/man1/sw_vers.html に転載)。`defaults read <Info.plist> CFBundleShortVersionString` は `defaults(1)` と一般に知られた使い方に基づく推測で、実機では未確認。動かなければ「調べられなかった物」として手動の案内が出ます。
 - ChatGPT デスクトップでスキルが手元の命令を動かせるかは**未確認**です (この席では試していません)。
 - Codex の砂場では通信できず、「判定しません」の 1 行で止まります (安全側)。ネットワークを許した設定では動きました。Codex の人のチェックは、投稿の 1 行を自分の端末で動かします (Windows の PowerShell で報告まで確かめました。Mac は試していません)。
@@ -48,14 +49,14 @@ Node 18 以上と `ssh-keygen` (OpenSSH 8.0 以上) が要ります。`ssh -V` �
 
 | 呼び出し | 場所 | 何に使うか |
 |---|---|---|
-| `fetch` | `get()` の 1 か所 | `DATA_URL` と `DATA_URL + ".sig"` への GET だけ (`redirect: "error"`・10 秒・256KB まで)。他の URL へは無し |
+| `fetch` | `get()` の 1 か所 | `DATA_URL` と `DATA_URL + ".sig"` への GET だけ (`redirect: "error"`・10 秒・256KB まで)。他の URL へは無し。1.0.6 から `DATA_URL` は `data/advisories-g2.json` (1.0.5 以前は `data/advisories.json`) |
 | `spawn` | `spawnFixed()` の 1 か所 (shell なし・配列) | 呼び元は 2 つだけ: `runProbe` (`PROBES` の表の命令) と `verifySignature` (`ssh-keygen -Y verify`) |
 | `exec` / `execFile` / `fork` | 無し (試験で grep して確認) | — |
 | `readFile` | 2 か所 | `allowed_signers` と `scripts/products.json` |
 | `writeFile` | 1 か所 | 署名を `ssh-keygen` に渡すための**自分で作った一時ファイル** (OS の temp・終わりに消す) |
 | `mkdtemp` / `rm` | 署名用・作業用の 2 組 | 自分で作った一時フォルダの作成と削除だけ。`PROBES` の命令は空の作業フォルダで打つ |
 
-`PROBES` の命令の一覧は `tests/skill/probes.snapshot.json` に固定してあり、変えると試験が落ちます。環境変数は `PYTHONPATH` `PYTHONSTARTUP` `PYTHONHOME` `NODE_OPTIONS` `NODE_PATH` `OLLAMA_HOST` を外して子プロセスを動かします。Python は `-I` で打ちます。
+`PROBES` の命令の一覧は `tests/skill/probes.snapshot.json` に固定してあり、変えると試験が落ちます。環境変数は `PYTHONPATH` `PYTHONSTARTUP` `PYTHONHOME` `NODE_OPTIONS` `NODE_PATH` `OLLAMA_HOST` を外して子プロセスを動かします (`dotnet`・`pwsh` だけは、上の送信しない設定を足す)。Python は `-I` で打ちます。
 
 ## 残り (採らなかった指摘)
 

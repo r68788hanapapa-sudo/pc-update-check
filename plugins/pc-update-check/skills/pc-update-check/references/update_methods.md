@@ -28,6 +28,10 @@
 | ollama | https://ollama.com/download を開く | 示すだけ |
 | wordpress | 管理画面の「ダッシュボード → 更新」 | 示すだけ |
 | mcp-sdk | 自分のプログラムの依存の版を、ページの項目と見比べる | 示すだけ |
+| dotnet | https://dotnet.microsoft.com/download を開く (同じ系統 = 先頭の数字が同じ物の新しい版。.NET 6・7 はサポートが終わっていて直った版が出ないので、10 などサポート中の系統へ。古い版を使うアプリは作った会社に確かめる) | 示すだけ (インストーラはその人が手で・管理者の許可が要ることがある) |
+| powershell | https://aka.ms/Get-PowerShell の案内を開く (同じ系統 7.4・7.5・7.6 の新しい版。Microsoft Store から入れた人はストアで更新。7.3 以前はサポートが終わっていて直った版が出ない) | 示すだけ (その人が手で) |
+| brotli | `python -I -m pip install --upgrade brotli` (Mac は python3・ホームのフォルダで打つ) | OK の後に実行 |
 
 - 出典 (公式): Claude Code https://code.claude.com/docs/en/setup / Codex https://github.com/openai/codex / pip https://pip.pypa.io/ / uv https://docs.astral.sh/uv/ / npm https://docs.npmjs.com/ / Bun https://bun.sh/docs/installation / Tailscale https://tailscale.com/download — 手段の文面は作った日 (2026-10-23) の記憶と上記の公式ページに基づく (Tailscale・Firefox・Zoom・Claude のアプリの手順は画面の操作の記憶で、Mac は試していません)。変わっていたら公式を優先する。
+- .NET・PowerShell 7・brotli (2026-10-28 に足した): PowerShell 7 の手段は勧告 (https://github.com/PowerShell/Announcements の CVE-2026-111497) の「Follow the instructions at Installing PowerShell 7 (https://aka.ms/Get-PowerShell)」に基づく。.NET の配布ページは dotnet.microsoft.com (勧告 https://github.com/dotnet/announcements/issues/494 の版の表と同じ系統)。サポートの終わりは .NET の releases-index.json (6.0 は 2024-11-12・7.0 は 2024-05-14) と PowerShell の support lifecycle (7.3 は 2024-05-08)。brotli は certifi と同じ pip の形。
 - 表に無い物 (別のパッケージ・ブラウザ拡張・知らない配布元) は提案も実行もしない。

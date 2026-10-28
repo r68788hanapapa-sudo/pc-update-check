@@ -7,10 +7,12 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const DATA_URL = "https://hanapapa-pc-update-check.pages.dev/data/advisories.json"; // advisories.json の URL (.sig は末尾に ".sig" を付けた物)
+// データの URL (.sig は末尾に ".sig" を付けた物)。1.0.6 から advisories-g2.json (製品の並びの 2 代目: .NET・PowerShell 7・brotli を足した物)。
+// 1.0.5 以前は advisories.json を読む (知らない製品の行があるとデータ全体を拒むので、build_data.py がそちらからは新しい製品の行を外す)
+const DATA_URL = "https://hanapapa-pc-update-check.pages.dev/data/advisories-g2.json";
 const PAGE_URL = "https://hanapapa-pc-update-check.pages.dev/"; // 人が直接見るページ
 const SKILL_LABEL = "パソコンのソフト更新チェック";
-const MIN_DATA_VERSION = "2026-10-24.2"; // これより古いデータは判定に使わない
+const MIN_DATA_VERSION = "2026-10-28.2"; // これより古いデータは判定に使わない (advisories-g2.json はこの版から)
 
 const FETCH_TIMEOUT_MS = 10_000;
 const PROBE_TIMEOUT_MS = 20_000;
@@ -43,6 +45,8 @@ const STRIP_ENV = ["PYTHONPATH", "PYTHONSTARTUP", "PYTHONHOME", "NODE_OPTIONS", 
 // ───── 命令の表 (ここに無い物は実行しない) ─────
 // re = 標準出力から版の文字列だけを取る正規表現 (1 つ目の括弧)。stderr は捨てる。
 // notInstalledExit = この終了コードなら「見つからなかった」。
+// all = 当たる行を全部取る (同じ製品の別の系統が並んで入る .NET のランタイム用。出力が空なら「見つからなかった」)。
+// env = その命令にだけ足す環境変数 (版を聞くだけの起動で、利用状況の送信や更新の確かめをさせない)。
 const PS = ["-NoProfile", "-NonInteractive", "-Command"];
 // 決まった場所の exe の「ファイルの版」を読むだけ (起動しない)。
 // 場所が複数あって 2 つ以上見つかった時は全部読み、一番古い版を出す (ユーザー用と全員用の 2 つ入っている人で、古い方を見落とさない)
@@ -53,6 +57,12 @@ const PS_EXE = (rel) => PS_FILE([`$env:ProgramFiles\\${rel}`, `\${env:ProgramFil
 // Claude のアプリ (Windows のストア版・出版元 ID が Anthropic の物だけ)
 const PS_CLAUDE_DESKTOP = "$p=Get-AppxPackage -Name Claude | Where-Object { $_.PublisherId -eq 'pzs8sxrjxfjjc' } | Select-Object -First 1; if ($p) { $p.Version.ToString() } else { 'NOTFOUND' }";
 const DOTTED = "(\\d+(?:\\.\\d+)+)";
+// .NET: dotnet --list-runtimes の「Microsoft.NETCore.App <版> [場所]」の行を全部 (プレビュー版 = 11.0.0-rc.3… は数字の直後が " [" でないので取らない)
+const DOTNET = { cmd: "dotnet", args: ["--list-runtimes"], re: "^Microsoft\\.NETCore\\.App (\\d+(?:\\.\\d+)+) \\[", all: true, env: { DOTNET_CLI_TELEMETRY_OPTOUT: "1", DOTNET_NOLOGO: "1" } };
+// PowerShell 7: pwsh --version の「PowerShell 7.4.22」(プレビュー版 = 7.6.0-preview.5 は行の終わりまで数字でないので取らない)。Windows に最初からある powershell.exe (5.1) は別物で対象外
+const PWSH = { cmd: "pwsh", args: ["--version"], re: "^PowerShell (\\d+(?:\\.\\d+)+)\\s*$", env: { POWERSHELL_TELEMETRY_OPTOUT: "1", POWERSHELL_UPDATECHECK: "Off" } };
+// Python の brotli: pip・certifi と同じ pip show。pip も一緒に聞く (出力は聞いた順) → 先頭が pip の段 = brotli は入っていない / 何も出ず終了コード 1 = pip が無い (調べられない)
+const BROTLI = (py) => ({ cmd: py, args: ["-I", "-m", "pip", "show", "brotli", "pip"], re: "^Name: [Bb]rotli\\s+Version:\\s*" + DOTTED, notInstalledRe: "^Name: pip\\s" });
 
 export const PROBES = {
   win32: {
@@ -74,6 +84,9 @@ export const PROBES = {
     bun: { cmd: "bun", args: ["--version"], re: "^" + DOTTED },
     node: { internal: "node" },
     npm: { cmd: "cmd.exe", args: ["/d", "/c", "npm", "--version"], re: "^" + DOTTED, notInstalledExit: 9009 },
+    dotnet: DOTNET,
+    powershell: PWSH,
+    brotli: BROTLI("python"),
   },
   darwin: {
     macos: { cmd: "sw_vers", args: ["-productVersion"], re: "^" + DOTTED },
@@ -94,6 +107,9 @@ export const PROBES = {
     bun: { cmd: "bun", args: ["--version"], re: "^" + DOTTED },
     node: { internal: "node" },
     npm: { cmd: "npm", args: ["--version"], re: "^" + DOTTED },
+    dotnet: DOTNET,
+    powershell: PWSH,
+    brotli: BROTLI("python3"),
   },
 };
 
@@ -121,6 +137,10 @@ const STEPS = {
   "claude-code": "「Claude Code を更新して」と言ってください (公式の手段を提案します)",
   codex: "「Codex を更新して」と言ってください (公式の手段を提案します)",
   ollama: "公式の配布ページ (ollama.com) から最新版を入れ直す",
+  // 系統が一覧より古い物 (.NET 6・7 / PowerShell 7.3 以前) も「今すぐ」に出る (直った版は一覧の一番古い系統の物)。サポートが終わって直った版が出ないことは、ここで伝える
+  dotnet: "公式の配布ページ (dotnet.microsoft.com) から、同じ系統 (先頭の数字が同じ物) の新しい版を入れる。.NET 6・7 などサポートが終わった系統には直った版が出ないので、サポート中の系統 (10 など) の新しい版を入れ、古い版を使うアプリは作った会社に確かめる",
+  powershell: "公式の案内 (aka.ms/Get-PowerShell) のとおり、同じ系統 (7.4・7.5・7.6) の新しい版を入れる (Microsoft Store から入れた人はストアで更新)。7.3 以前はサポートが終わっていて直った版が出ないので、サポート中の版 (7.6 など) を入れる",
+  brotli: "「brotli を更新して」と言ってください (公式の手段を提案します)",
 };
 const MANUAL = {
   windows: "設定 → Windows Update で「最新の状態です」と出るか見る",
@@ -142,6 +162,9 @@ const MANUAL = {
   "claude-code": "AI との会話で版を聞くか、ターミナルで claude --version",
   codex: "AI との会話で版を聞くか、ターミナルで codex --version",
   ollama: "AI との会話で版を聞くか、ターミナルで ollama --version",
+  dotnet: "AI との会話で版を聞くか、ターミナルで dotnet --list-runtimes (Microsoft.NETCore.App の行を全部。先頭の数字が同じ系統の直った版と比べる)",
+  powershell: "AI との会話で版を聞くか、ターミナルで pwsh -v",
+  brotli: "AI との会話で版を聞くか、ターミナルで python -m pip show brotli",
 };
 // 「比べられない」の理由が製品ごとに違う物 (script が持つ・データからは取らない)
 const UNKNOWN_REASON = {
@@ -187,6 +210,18 @@ export function judge(local, fixedVersions, lineDepth, olderLinesUnknown = false
     return { status: "update_now", fixed: lowest };
   }
   return { status: "unknown" }; // 載っていない系統で、全部より古くない = 比べられない (ok にしない)
+}
+// 同じ製品の版が複数ある時 (.NET の 6.0.16 と 8.0.21 など): 1 つずつ judge して、一番悪い物を出す (今すぐ > 比べられない > 更新済み)。
+// local = その status になった版を「・」でつないだ物。版が 1 つなら judge と同じ結果
+export function judgeAll(versions, fixedVersions, lineDepth, olderLinesUnknown = false) {
+  const rs = [...versions].sort((a, b) => compareVersions(a, b) ?? 0).map((v) => ({ v, ...judge(v, fixedVersions, lineDepth, olderLinesUnknown) }));
+  for (const status of ["update_now", "unknown", "ok"]) {
+    const hit = rs.filter((x) => x.status === status);
+    if (!hit.length) continue;
+    const fixed = [...new Set(hit.map((x) => x.fixed).filter(Boolean))];
+    return { status, local: hit.map((x) => x.v).join("・"), fixed: fixed.length ? fixed.join("・") : undefined };
+  }
+  return { status: "unknown", local: null };
 }
 
 // ───── データの検証 (外れたら全部拒む) ─────
@@ -297,12 +332,18 @@ function cleanEnv() {
 // 1 つの命令を打って版の文字列だけを取る
 export async function runProbe(spec, { cwd, env = cleanEnv(), timeoutMs = PROBE_TIMEOUT_MS } = {}) {
   if (spec.internal === "node") return { state: "version", version: process.version.replace(/^v/, "") };
-  const r = await spawnFixed(spec.cmd, spec.args, { cwd, env, timeoutMs });
+  const r = await spawnFixed(spec.cmd, spec.args, { cwd, env: spec.env ? { ...env, ...spec.env } : env, timeoutMs });
   if (r.timedOut) return { state: "timeout" };
   if (r.error) return { state: r.error === "ENOENT" ? "not_installed" : "error" };
   const out = (r.stdout ?? "").trim();
   if (spec.notInstalledRe && new RegExp(spec.notInstalledRe).test(out)) return { state: "not_installed" };
   if (r.code !== 0) return { state: spec.notInstalledExit === r.code ? "not_installed" : "error" };
+  if (spec.all) {
+    if (out === "") return { state: "not_installed" }; // dotnet はあるが、ランタイムが 1 つも無い
+    const versions = [...new Set([...out.matchAll(new RegExp(spec.re, "gm"))].map((x) => x[1]))].sort((a, b) => compareVersions(a, b) ?? 0);
+    if (!versions.length || !versions.every((v) => parseVersion(v))) return { state: "error" };
+    return { state: "version", version: versions[0], versions };
+  }
   const m = new RegExp(spec.re, "m").exec(out);
   if (!m || !m[1]) return { state: "error" };
   return { state: "version", version: m[1] };
@@ -410,8 +451,8 @@ export async function run(opts = {}) {
       const r = await probe(it.product); // ここから先 = この PC で版を調べた物 (checked)
       if (r.state === "not_installed") return { ...base, checked: true, status: "not_installed" };
       if (r.state !== "version") return { ...base, checked: true, status: "unknown" };
-      const j = judge(r.version, it.fixed_versions, products.products[it.product].line_depth, products.products[it.product].older_lines_unknown === true);
-      return { ...base, checked: true, local_version: r.version, status: j.status, fixed_version: j.fixed ?? base.fixed_version };
+      const j = judgeAll(r.versions ?? [r.version], it.fixed_versions, products.products[it.product].line_depth, products.products[it.product].older_lines_unknown === true);
+      return { ...base, checked: true, local_version: j.local, status: j.status, fixed_version: j.fixed ?? base.fixed_version };
     }));
     const learnings = [];
     for (const it of [...items.filter((i) => i.status === "update_now"), ...items.filter((i) => i.status === "ok")]) {

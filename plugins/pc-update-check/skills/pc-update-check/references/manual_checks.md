@@ -13,13 +13,17 @@ AI は下の「固定の命令」を打って版を **表にするだけ**。判
 | Ollama | ターミナルで `ollama --version` | 同じ |
 | Python / pip / certifi | `python -I --version` / `python -I -m pip --version` / `python -I -m pip show certifi` | `python3 -I ...` (同じ形) |
 | uv / npm / Node | `uv --version` / `npm --version` / `node --version` | 同じ |
+| .NET | `dotnet --list-runtimes` (Microsoft.NETCore.App の行を全部) | 同じ |
+| PowerShell 7 | `pwsh --version` (Windows に最初からある PowerShell 5.1 とは別物) | 同じ |
+| Python の brotli | `python -I -m pip show brotli` | `python3 -I ...` (同じ形) |
 | WordPress | 管理画面 → ダッシュボード → 更新 | 同じ |
 
 ## 固定の命令 (Node が無い時に AI が打ってよい物はこれだけ・1 つずつ・読むだけ)
 
 - `claude --version` / `codex --version` / `uv --version` / `npm --version` / `node --version`
 - Ollama だけは環境変数 OLLAMA_HOST を外して打つ (別の機械につながないため): bash / Mac は `env -u OLLAMA_HOST ollama --version`、PowerShell は `$env:OLLAMA_HOST=$null; ollama --version`
-- `python -I --version` / `python -I -m pip --version` / `python -I -m pip show certifi` (Mac は `python3`)
+- `python -I --version` / `python -I -m pip --version` / `python -I -m pip show certifi` / `python -I -m pip show brotli` (Mac は `python3`)
+- `dotnet --list-runtimes` / `pwsh --version`
 - Windows の OS: `powershell -NoProfile -Command "(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').CurrentBuild"` と `... .UBR` (この 2 値だけ)
 - Mac の OS: `sw_vers -productVersion`
 - Mac の Chrome: `defaults read "/Applications/Google Chrome.app/Contents/Info.plist" CFBundleShortVersionString`
