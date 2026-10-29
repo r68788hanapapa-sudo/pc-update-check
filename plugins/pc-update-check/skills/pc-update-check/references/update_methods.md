@@ -24,14 +24,19 @@
 | bun | `bun upgrade` | OK の後に実行 |
 | java | 入れた会社 (配布元) の 2026-10-21 以降の更新を入れる。配布元ごとに手順が違うので、配布元の案内を開く | 示すだけ (聞くだけの項目・版は調べない) |
 | node | https://nodejs.org/ の配布ページを開く (該当の系統の最新版) | 示すだけ (インストーラはその人が手で) |
-| python | https://www.python.org/downloads/ を開く | 示すだけ |
+| python | https://www.python.org/downloads/ を開く (同じ系統 = 先頭 2 つの数字が同じ物の新しい版。Windows・Mac 用の入れ物が出るのは 3.14・3.15 だけで、3.13 以下の直った版はソースだけなので、3.13 以下の人は 3.14 か 3.15 へ。3.10 以前はサポートが終わっていて直った版が出ない) | 示すだけ (インストーラはその人が手で) |
 | ollama | https://ollama.com/download を開く | 示すだけ |
 | wordpress | 管理画面の「ダッシュボード → 更新」 | 示すだけ |
 | mcp-sdk | 自分のプログラムの依存の版を、ページの項目と見比べる | 示すだけ |
 | dotnet | https://dotnet.microsoft.com/download を開く (同じ系統 = 先頭の数字が同じ物の新しい版。.NET 6・7 はサポートが終わっていて直った版が出ないので、10 などサポート中の系統へ。古い版を使うアプリは作った会社に確かめる) | 示すだけ (インストーラはその人が手で・管理者の許可が要ることがある) |
 | powershell | https://aka.ms/Get-PowerShell の案内を開く (同じ系統 7.4・7.5・7.6 の新しい版。Microsoft Store から入れた人はストアで更新。7.3 以前はサポートが終わっていて直った版が出ない) | 示すだけ (その人が手で) |
 | brotli | `python -I -m pip install --upgrade brotli` (Mac は python3・ホームのフォルダで打つ) | OK の後に実行 |
+| visualstudio | スタートから「Visual Studio Installer」を開き、入っている物 (Build Tools も) ごとに「更新」を押す。2017 (15.9) は直った版がまだ出ていないので、使っていなければ外し、使うなら 2022 か 2026 の新しい版へ | 示すだけ (その人が手で・管理者の許可が要ることがある) |
+| thunderbird | Thunderbird の右上の ≡ → ヘルプ → Thunderbird について → 更新を待って「再起動」 | 示すだけ |
+| safari | システム設定 → 一般 → ソフトウェアアップデート (Safari の更新もここに出る。出ない時は macOS を上げる) | 示すだけ |
+| nordvpn | NordVPN のアプリの更新の知らせから入れる。出ない時は https://nordvpn.com/download/ を開く | 示すだけ (その人が手で) |
 
 - 出典 (公式): Claude Code https://code.claude.com/docs/en/setup / Codex https://github.com/openai/codex / pip https://pip.pypa.io/ / uv https://docs.astral.sh/uv/ / npm https://docs.npmjs.com/ / Bun https://bun.sh/docs/installation / Tailscale https://tailscale.com/download — 手段の文面は作った日 (2026-10-23) の記憶と上記の公式ページに基づく (Tailscale・Firefox・Zoom・Claude のアプリの手順は画面の操作の記憶で、Mac は試していません)。変わっていたら公式を優先する。
 - .NET・PowerShell 7・brotli (2026-10-28 に足した): PowerShell 7 の手段は勧告 (https://github.com/PowerShell/Announcements の CVE-2026-111497) の「Follow the instructions at Installing PowerShell 7 (https://aka.ms/Get-PowerShell)」に基づく。.NET の配布ページは dotnet.microsoft.com (勧告 https://github.com/dotnet/announcements/issues/494 の版の表と同じ系統)。サポートの終わりは .NET の releases-index.json (6.0 は 2024-11-12・7.0 は 2024-05-14) と PowerShell の support lifecycle (7.3 は 2024-05-08)。brotli は certifi と同じ pip の形。
+- Python 本体・Visual Studio・Thunderbird・Safari・NordVPN (2026-10-29 に足した・1.0.7): Python の「3.13 以下はソースだけ」は Python Insider (https://blog.python.org/2026/10/python-3152-31410-31318-31216-31118/) の「Python 3.15.2 and 3.14.10 come with binary installers. Python 3.13.18, 3.12.16 and 3.11.18 are source-only security releases.」、3.10 の終わりは同じ置き場の 10/01 の記事。Visual Studio の手段は Microsoft の release history の「On Windows, open the Visual Studio Installer.」と、2017 の直った版が無いことは MSRC の CVE-2026-111497 (2017 の行に直った版の番号なし) と 2017 の release notes (最新 15.9.83)。Thunderbird・Safari・NordVPN の手段は画面の操作の記憶で、試していません (NordVPN の配布ページの URL は確かめていない)。
 - 表に無い物 (別のパッケージ・ブラウザ拡張・知らない配布元) は提案も実行もしない。

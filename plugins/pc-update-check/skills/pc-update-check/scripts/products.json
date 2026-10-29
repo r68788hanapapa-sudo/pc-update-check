@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "_note": "older_lines_unknown = 載っている系統より古い版を「今すぐ」にせず「比べられない」にする (Apple が 15 と 26 の直った版しか書いていない macOS 用)。line_depth = 系統を決める先頭の区切りの数 (windows 3 = 10.0.26200 / node・macos・firefox・java 1 = 24 / それ以外 0 = 系統なし・fixed_versions の 1 つ目だけ)。source_hosts = source_url のホスト名 (完全一致) の許可リスト。席 B の check.mjs と同じ物を読む。source_prefixes = host が github.com の時だけ、source_url の前方一致を必須にする製品ごとの公式のリポ (誰でもリポを作れるため)。edge / python / npm / wordpress のホストは席 A の仮置き (窓口が確かめる)。macos / tailscale / firefox / zoom / bun / java のホストは 10/24 に一次の発表を開いて確かめた。claude-desktop の勧告は claude-code のリポに載っている (10/24 確認)。dotnet / powershell / brotli は 10/28 に足した (1.0.6・一次の発表を開いて確かめた: dotnet/announcements・PowerShell/Announcements・google/brotli)。dotnet = Microsoft.NETCore.App の系統 (8 / 9 / 10 の先頭 1 区切り)・powershell = 7.4 / 7.5 / 7.6 の先頭 2 区切り。どちらも older_lines_unknown は付けない (サポートが終わった古い系統 = 直った版が出ない = 今すぐ)。1.0.5 以前のスキルはこの 3 つを知らないので、build_data.py が古い置き場 (advisories.json) からはこの 3 つの行を外す (LEGACY_PRODUCTS)。",
+  "_note": "older_lines_unknown = 載っている系統より古い版を「今すぐ」にせず「比べられない」にする (Apple が 15 と 26 の直った版しか書いていない macOS 用)。line_depth = 系統を決める先頭の区切りの数 (windows 3 = 10.0.26200 / node・macos・firefox・java 1 = 24 / それ以外 0 = 系統なし・fixed_versions の 1 つ目だけ)。source_hosts = source_url のホスト名 (完全一致) の許可リスト。席 B の check.mjs と同じ物を読む。source_prefixes = host が github.com の時だけ、source_url の前方一致を必須にする製品ごとの公式のリポ (誰でもリポを作れるため)。edge / python / npm / wordpress のホストは席 A の仮置き (窓口が確かめる)。macos / tailscale / firefox / zoom / bun / java のホストは 10/24 に一次の発表を開いて確かめた。claude-desktop の勧告は claude-code のリポに載っている (10/24 確認)。dotnet / powershell / brotli は 10/28 に足した (1.0.6・一次の発表を開いて確かめた: dotnet/announcements・PowerShell/Announcements・google/brotli)。dotnet = Microsoft.NETCore.App の系統 (8 / 9 / 10 の先頭 1 区切り)・powershell = 7.4 / 7.5 / 7.6 の先頭 2 区切り。どちらも older_lines_unknown は付けない (サポートが終わった古い系統 = 直った版が出ない = 今すぐ)。1.0.5 以前のスキルはこの 3 つを知らないので、build_data.py が古い置き場 (advisories.json) からはこの 3 つの行を外す (LEGACY_PRODUCTS)。10/29 (1.0.7): python を系統つき (line_depth 2 = 3.15 / 3.14 / 3.13 / 3.12 / 3.11) に直し、Python Insider の置き場 blog.python.org を足した (10/26 の急ぎの安全の出しが 5 系統に出たため。3.10 は 10/01 の 3.10.22 でサポート終了 = 今すぐ)。visualstudio (line_depth 1 = 2026 は 18・2022 は 17・2019 は 16。Microsoft は各版の最後の系統だけをサポートし、MSRC は 18.11 / 17.14 / 16.11 だけに直った版を書く = 同じ年の古い系統 (17.12 など) も今すぐ。2017 (15.9) は MSRC が対象と書くのに直った版の番号が無い = 全部の系統より古い = 今すぐ (直った版の欄は 16.11.61・やることの文で「2017 の直った版はまだ無い」と伝える)。Build Tools も同じ番号 (release history の同じ行に Build Tools の入れ物とビルド番号) で比べる)・thunderbird (line_depth 1 = firefox と同じ形)・safari (Mac だけ・系統なし)・nordvpn (Windows だけ・系統なし) を足した。1.0.6 以前のスキルは python を系統なしで数えるので、python の行は古い置き場 (advisories-g2.json・advisories.json) に入れない (build_data.py の OLD_GENERATIONS が line_depth の違う製品の行を外す)。",
   "products": {
     "windows":     {"line_depth": 3, "source_hosts": ["msrc.microsoft.com", "nvd.nist.gov"]},
     "macos":       {"line_depth": 1, "older_lines_unknown": true, "source_hosts": ["support.apple.com", "nvd.nist.gov"]},
@@ -13,7 +13,7 @@
     "claude-desktop": {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/anthropics/claude-code/"]},
     "codex":       {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/openai/codex/"]},
     "ollama":      {"line_depth": 0, "source_hosts": ["cert.pl", "github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/ollama/ollama/"]},
-    "python":      {"line_depth": 0, "source_hosts": ["www.python.org", "python.org", "nvd.nist.gov"]},
+    "python":      {"line_depth": 2, "source_hosts": ["www.python.org", "python.org", "blog.python.org", "nvd.nist.gov"]},
     "pip":         {"line_depth": 0, "source_hosts": ["pip.pypa.io", "nvd.nist.gov"]},
     "certifi":     {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/certifi/python-certifi/"]},
     "uv":          {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/astral-sh/uv/"]},
@@ -26,6 +26,10 @@
     "mcp-sdk":     {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/modelcontextprotocol/typescript-sdk/"]},
     "dotnet":      {"line_depth": 1, "source_hosts": ["github.com", "msrc.microsoft.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/dotnet/announcements/", "https://github.com/dotnet/core/"]},
     "powershell":  {"line_depth": 2, "source_hosts": ["github.com", "msrc.microsoft.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/PowerShell/Announcements/", "https://github.com/PowerShell/PowerShell/"]},
-    "brotli":      {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/google/brotli/"]}
+    "brotli":      {"line_depth": 0, "source_hosts": ["github.com", "nvd.nist.gov"], "source_prefixes": ["https://github.com/google/brotli/"]},
+    "visualstudio": {"line_depth": 1, "source_hosts": ["msrc.microsoft.com", "learn.microsoft.com", "nvd.nist.gov"]},
+    "thunderbird": {"line_depth": 1, "source_hosts": ["www.mozilla.org", "nvd.nist.gov"]},
+    "safari":      {"line_depth": 0, "source_hosts": ["support.apple.com", "nvd.nist.gov"]},
+    "nordvpn":     {"line_depth": 0, "source_hosts": ["cert.pl", "nvd.nist.gov"]}
   }
 }

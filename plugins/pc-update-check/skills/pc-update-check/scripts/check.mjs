@@ -7,12 +7,12 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-// データの URL (.sig は末尾に ".sig" を付けた物)。1.0.6 から advisories-g2.json (製品の並びの 2 代目: .NET・PowerShell 7・brotli を足した物)。
-// 1.0.5 以前は advisories.json を読む (知らない製品の行があるとデータ全体を拒むので、build_data.py がそちらからは新しい製品の行を外す)
-const DATA_URL = "https://hanapapa-pc-update-check.pages.dev/data/advisories-g2.json";
+// データの URL (.sig は末尾に ".sig" を付けた物)。1.0.7 から advisories-g3.json (製品の並びの 3 代目: Python 本体の系統・Visual Studio・Thunderbird・Safari・NordVPN を足した物)。
+// 1.0.6 は advisories-g2.json、1.0.5 以前は advisories.json を読む (知らない製品の行・数え方 (line_depth) の違う製品の行があるとデータ全体を拒むので、build_data.py がそちらからはその行を外す)
+const DATA_URL = "https://hanapapa-pc-update-check.pages.dev/data/advisories-g3.json";
 const PAGE_URL = "https://hanapapa-pc-update-check.pages.dev/"; // 人が直接見るページ
 const SKILL_LABEL = "パソコンのソフト更新チェック";
-const MIN_DATA_VERSION = "2026-10-28.2"; // これより古いデータは判定に使わない (advisories-g2.json はこの版から)
+const MIN_DATA_VERSION = "2026-10-29.3"; // これより古いデータは判定に使わない (advisories-g3.json はこの版から)
 
 const FETCH_TIMEOUT_MS = 10_000;
 const PROBE_TIMEOUT_MS = 20_000;
@@ -63,6 +63,9 @@ const DOTNET = { cmd: "dotnet", args: ["--list-runtimes"], re: "^Microsoft\\.NET
 const PWSH = { cmd: "pwsh", args: ["--version"], re: "^PowerShell (\\d+(?:\\.\\d+)+)\\s*$", env: { POWERSHELL_TELEMETRY_OPTOUT: "1", POWERSHELL_UPDATECHECK: "Off" } };
 // Python の brotli: pip・certifi と同じ pip show。pip も一緒に聞く (出力は聞いた順) → 先頭が pip の段 = brotli は入っていない / 何も出ず終了コード 1 = pip が無い (調べられない)
 const BROTLI = (py) => ({ cmd: py, args: ["-I", "-m", "pip", "show", "brotli", "pip"], re: "^Name: [Bb]rotli\\s+Version:\\s*" + DOTTED, notInstalledRe: "^Name: pip\\s" });
+// Visual Studio (Build Tools も): 入れる道具に付いてくる vswhere (固定の絶対パス・PATH を引かない) で、入っている物ごとの表示の版 (17.14.30 など) を 1 行ずつ。
+// 行の終わりまで数字の物だけ取る (プレビュー版 = 「18.12.0 Insiders […]」は数えない)。何も入っていなければ出力が空 = 見つからなかった
+const VSWHERE = { cmd: "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe", args: ["-all", "-prerelease", "-products", "*", "-property", "catalog_productDisplayVersion"], re: "^(\\d+(?:\\.\\d+)+)\\s*$", all: true };
 
 export const PROBES = {
   win32: {
@@ -87,6 +90,9 @@ export const PROBES = {
     dotnet: DOTNET,
     powershell: PWSH,
     brotli: BROTLI("python"),
+    visualstudio: VSWHERE,
+    thunderbird: { cmd: "powershell.exe", args: [...PS, PS_EXE("Mozilla Thunderbird\\thunderbird.exe")], re: "^" + DOTTED, notInstalledRe: "^NOTFOUND" },
+    nordvpn: { cmd: "powershell.exe", args: [...PS, PS_EXE("NordVPN\\NordVPN.exe")], re: "^" + DOTTED, notInstalledRe: "^NOTFOUND" },
   },
   darwin: {
     macos: { cmd: "sw_vers", args: ["-productVersion"], re: "^" + DOTTED },
@@ -110,6 +116,9 @@ export const PROBES = {
     dotnet: DOTNET,
     powershell: PWSH,
     brotli: BROTLI("python3"),
+    thunderbird: { cmd: "defaults", args: ["read", "/Applications/Thunderbird.app/Contents/Info.plist", "CFBundleShortVersionString"], re: "^" + DOTTED, notInstalledExit: 1 },
+    // Safari は Mac に必ずある → 読めない時は「見つからなかった」にせず「調べられなかった」(notInstalledExit を付けない)
+    safari: { cmd: "defaults", args: ["read", "/Applications/Safari.app/Contents/Info.plist", "CFBundleShortVersionString"], re: "^" + DOTTED },
   },
 };
 
@@ -129,7 +138,8 @@ const STEPS = {
   vscode: "メニューの「ヘルプ」→「更新の確認」(Mac は「Code」→「更新の確認」)。出た更新を入れて再起動",
   bun: "「Bun を更新して」と言ってください (公式の手段を提案します)",
   node: "公式の配布ページ (nodejs.org) から該当の系統の最新版を入れ直す",
-  python: "公式の配布ページ (python.org) から最新版を入れ直す",
+  // 1.0.7 から系統つき (3.12 なら 3.12 の直った版と比べる)。3.13 以下の安全の出しはソースだけで、python.org に Windows・Mac 用の入れ物が無い
+  python: "公式の配布ページ (python.org) から新しい版を入れる。Windows・Mac 用の入れ物 (インストーラー) が出るのは新しい系統 (3.14・3.15) だけで、3.13 以下の直った版はソースだけなので、3.13 以下の人は 3.14 か 3.15 の新しい版へ移す (古い版で動かしているプログラムは、動くか確かめてから)。3.10 以前はサポートが終わっていて直った版が出ない",
   npm: "「npm を更新して」と言ってください (公式の手段を提案します)",
   pip: "「pip を更新して」と言ってください (公式の手段を提案します)",
   certifi: "「certifi を更新して」と言ってください (公式の手段を提案します)",
@@ -141,6 +151,11 @@ const STEPS = {
   dotnet: "公式の配布ページ (dotnet.microsoft.com) から、同じ系統 (先頭の数字が同じ物) の新しい版を入れる。.NET 6・7 などサポートが終わった系統には直った版が出ないので、サポート中の系統 (10 など) の新しい版を入れ、古い版を使うアプリは作った会社に確かめる",
   powershell: "公式の案内 (aka.ms/Get-PowerShell) のとおり、同じ系統 (7.4・7.5・7.6) の新しい版を入れる (Microsoft Store から入れた人はストアで更新)。7.3 以前はサポートが終わっていて直った版が出ないので、サポート中の版 (7.6 など) を入れる",
   brotli: "「brotli を更新して」と言ってください (公式の手段を提案します)",
+  // 同じ年の版の古い系統 (2022 の 17.12 など) は一覧の系統と同じ先頭の数字なので、その年の直った版と比べて「今すぐ」に出る。2017 (15.9) は直った版が一覧に無く、一番古い系統の版 (16.11 の物) が出る
+  visualstudio: "スタートから「Visual Studio Installer」を開き、入っている物 (Build Tools も) ごとに「更新」を押す。2017 (15.9) の人で直った版に 16.11 の版が出た時は、2017 の直った版がまだ出ていないという意味なので、使っていなければ外し、使うなら 2022 か 2026 の新しい版へ移す",
+  thunderbird: "Thunderbird の右上の ≡ → ヘルプ → Thunderbird について → 更新を待って「再起動」",
+  safari: "システム設定 → 一般 → ソフトウェアアップデート (Safari の更新もここに出ます)。出ない時は、この Mac の macOS が古くて新しい Safari が出ていない見込みなので、macOS を上げる",
+  nordvpn: "NordVPN のアプリに更新の知らせが出ていればそこから入れる。出ない時は公式の配布ページ (nordvpn.com) から新しい版を入れる",
 };
 const MANUAL = {
   windows: "設定 → Windows Update で「最新の状態です」と出るか見る",
@@ -165,6 +180,10 @@ const MANUAL = {
   dotnet: "AI との会話で版を聞くか、ターミナルで dotnet --list-runtimes (Microsoft.NETCore.App の行を全部。先頭の数字が同じ系統の直った版と比べる)",
   powershell: "AI との会話で版を聞くか、ターミナルで pwsh -v",
   brotli: "AI との会話で版を聞くか、ターミナルで python -m pip show brotli",
+  visualstudio: "スタートから「Visual Studio Installer」を開くと、入っている物 (Build Tools も) ごとに版が出る",
+  thunderbird: "Thunderbird の右上の ≡ → ヘルプ → Thunderbird について",
+  safari: "Safari のメニューの「Safari」→「Safari について」",
+  nordvpn: "Windows の設定 → アプリ → インストールされているアプリで NordVPN の版を見る",
 };
 // 「比べられない」の理由が製品ごとに違う物 (script が持つ・データからは取らない)
 const UNKNOWN_REASON = {
